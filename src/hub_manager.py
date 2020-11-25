@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-from __future__ import absolute_import, division, print_function
+
 import socket
 import requests
 import logging
@@ -9,10 +9,10 @@ import time
 
 import settings
 import json
-from urllib2 import urlopen
+from urllib.request import urlopen
 from server import HUB_ENDPOINT, HUBS_ENDPOINT, PROJECTS_ENDPOINT, DATA_ENDPOINT
 from server import request_headers
-from urllib import quote_plus
+from urllib.parse import quote_plus
 
 SLEEP_WAIT_SEC = 60 # 1 minute
 LONG_TIMEOUT = (9.05, 900)

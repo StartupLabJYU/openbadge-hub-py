@@ -1,4 +1,4 @@
-from __future__ import absolute_import, division, print_function
+
 import os
 import re
 import logging
@@ -62,7 +62,7 @@ class BeaconManagerStandalone():
                                        key=mac,  # using mac as key since no other key exists
                                        badge_id=int(mac_id_map[mac][0]),
                                        project_id=int(mac_id_map[mac][1]),
-                                       ) for mac in mac_id_map.keys()    
+                                       ) for mac in mac_id_map.keys()
                         }
 
         return beacons

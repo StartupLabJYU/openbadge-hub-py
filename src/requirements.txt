@@ -1,6 +1,6 @@
 wheel
-bluepy==1.0.4
-python-dateutil==2.5.3
-python-dotenv==0.6.0
-requests==2.12.4
-netifaces==0.10.7
+bluepy
+python-dateutil
+python-dotenv
+requests
+netifaces

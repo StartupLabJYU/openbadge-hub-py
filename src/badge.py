@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-from __future__ import absolute_import, division, print_function
+
 
 from bluepy import btle
 from bluepy.btle import UUID, Peripheral, DefaultDelegate, AssignedNumbers
@@ -92,7 +92,7 @@ class SeenDevice():
     """
     Represents an instance of a proximity data for a device found during a scan
     """
-    def __init__(self,(ID,rssi,count)):
+    def __init__(self, ID, rssi, count):
         self.ID = ID
         self.rssi = rssi
         self.count = count
@@ -253,10 +253,9 @@ class BadgeDelegate(DefaultDelegate):
             # also should we do some sanity checking?
             num_devices = int(len(data)/4)
 
-            raw_arr = struct.unpack('<' + num_devices * 'Hbb',data)
+            raw_arr = struct.unpack('<' + num_devices * 'Hbb', data)
 
-            tuple_arr = zip(raw_arr[0::3],raw_arr[1::3],raw_arr[2::3])
-            device_arr = [SeenDevice(params) for params in tuple_arr]
+            device_arr = [SeenDevice(params) for params in zip(raw_arr[0::3], raw_arr[1::3], raw_arr[2::3])]
             self.tempScan.addDevices(device_arr)
             if self.tempScan.completed():
                 # we're done with this, write scan and continue
@@ -521,15 +520,12 @@ class Badge:
 
             retcode = 0
 
-        except BTLEException, e:
-            self.logger.error("Bluetooth error")
-            self.logger.error(e.code)
-            self.logger.error(e.message)
-        except TimeoutError, te:
+        except BTLEException as e:
+            self.logger.error("Bluetooth error", exc_info=True)
+        except TimeoutError as te:
             self.logger.error("TimeoutError: " + te.message)
         except Exception as e:
-            s = traceback.format_exc()
-            self.logger.error("unexpected failure, {} ,{}".format(e, s))
+            self.logger.error("unexpected failure", exc_info=True)
         finally:
             self.disconnect()
 
@@ -575,15 +571,12 @@ class Badge:
 
             retcode = 0
 
-        except BTLEException, e:
-            self.logger.error("Bluetooth error")
-            self.logger.error(e.code)
-            self.logger.error(e.message)
-        except TimeoutError, te:
+        except BTLEException as e:
+            self.logger.error("Bluetooth error", exc_info=True)
+        except TimeoutError as te:
             self.logger.error("TimeoutError: " + te.message)
         except Exception as e:
-            s = traceback.format_exc()
-            self.logger.error("unexpected failure, {} ,{}".format(e, s))
+            self.logger.error("unexpected failure", exc_info=True)
         finally:
             self.disconnect()
 
@@ -676,15 +669,12 @@ class Badge:
 
             retcode = 0
 
-        except BTLEException, e:
-            self.logger.error("failed pulling data")
-            self.logger.error(e.code)
-            self.logger.error(e.message)
-        except TimeoutError, te:
+        except BTLEException as e:
+            self.logger.error("failed pulling data", exc_info=True)
+        except TimeoutError as te:
             self.logger.error("TimeoutError: " + te.message)
         except Exception as e:
-            s = traceback.format_exc()
-            self.logger.error("unexpected failure, {} ,{}".format(e, s))
+            self.logger.error("unexpected failure", exc_info=True)
         finally:
             try:
                 self.disconnect()
@@ -712,7 +702,7 @@ def datetime_to_epoch(d):
     :return:
     """
     epoch_seconds = (d - datetime.datetime(1970, 1, 1)).total_seconds()
-    long_epoch_seconds = long(floor(epoch_seconds))
+    long_epoch_seconds = int(floor(epoch_seconds))
     ts_fract = int(floor(d.microsecond / 1000))
     return (long_epoch_seconds, ts_fract)
 
@@ -739,7 +729,7 @@ def split_ts_float(ts):
     :param ts:
     :return:
     """
-    seconds = long(floor(ts))
+    seconds = int(floor(ts))
     fract = int(round((ts - seconds) * 1000))
     return seconds,fract
 

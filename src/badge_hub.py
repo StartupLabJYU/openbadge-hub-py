@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-from __future__ import absolute_import, division, print_function
+
 
 import os
 import re
@@ -164,9 +164,7 @@ def _get_pending_file_name(data_type):
         return a new pending filename
     Else, return an existing one.
     """
-    filenames = filter(
-            lambda x: os.path.getsize(x) < MAX_PENDING_FILE_SIZE,
-            glob.glob("{}*{}*".format(pending_file_prefix, data_type)))
+    filenames = [x for x in glob.glob("{}*{}*".format(pending_file_prefix, data_type)) if os.path.getsize(x) < MAX_PENDING_FILE_SIZE]
     if len(filenames) == 0:
         return _create_pending_file_name(data_type)
     else:
@@ -298,7 +296,7 @@ def scan_for_devices(devices_whitelist, show_all=False):
         all_devices = {}
 
     scanned_devices = []
-    for addr,device_info in all_devices.iteritems():
+    for addr,device_info in all_devices.items():
         if addr in devices_whitelist:
             logger.debug("\033[1;7m\033[1;32mFound {}, added. Device info: {}\033[0m".format(addr, device_info))
             scanned_devices.append({'mac':addr,'device_info':device_info})
@@ -320,7 +318,7 @@ def scan_for_bc_devices(devices_whitelist, show_all=False):
         all_bc_devices = {}
 
     scanned_bc_devices = []
-    for addr,device_info in all_bc_devices.iteritems():
+    for addr,device_info in all_bc_devices.items():
         if addr in devices_whitelist:
             logger.debug("\033[1;7m\033[1;32mFound {}, added. Device info: {}\033[0m".format(addr, device_info))
             scanned_bc_devices.append({'mac':addr,'device_info':device_info})
@@ -438,7 +436,7 @@ def pull_devices(mgr, mgrb, start_recording):
             offload_data()
 
         logger.info("Scanning for members...")
-        scanned_devices = scan_for_devices(mgr.badges.keys())
+        scanned_devices = scan_for_devices(list(mgr.badges.keys()))
 
         # Randomly shuffle devices
         random.shuffle(scanned_devices)
@@ -482,7 +480,7 @@ def pull_devices(mgr, mgrb, start_recording):
             time.sleep(2)  # requires sleep between devices
 
         logger.info("Scanning for beacons...")
-        scanned_beacons = scan_for_bc_devices(mgrb.beacons.keys())
+        scanned_beacons = scan_for_bc_devices(list(mgrb.beacons.keys()))
 
         # Randomly shuffle devices
         random.shuffle(scanned_beacons)
@@ -542,7 +540,7 @@ def devices_scanner(mgr, mgrb, show_all=False):
     mgrb.pull_beacons_list()
     while True:
         logger.info("Scanning for devices...")
-        scanned_devices = scan_for_devices(mgr.badges.keys(), show_all) + scan_for_bc_devices(mgrb.beacons.keys())
+        scanned_devices = scan_for_devices(list(mgr.badges.keys()), show_all) + scan_for_bc_devices(list(mgrb.beacons.keys()))
 
         with open(scans_file_name, "a") as fout:
             for device in scanned_devices:
@@ -570,7 +568,7 @@ def start_all_devices(mgr):
         mgr.pull_badges_list()
 
         logger.info("Scanning for devices...")
-        scanned_devices = scan_for_devices(mgr.badges.keys())
+        scanned_devices = scan_for_devices(list(mgr.badges.keys()))
         for device in scanned_devices:
  
             dev_info = device['device_info']
@@ -612,11 +610,11 @@ def print_badges(mgr, mgrb):
     beacon_list = mgrb.beacons
 
     print("Members:")
-    for key, value in badge_list.iteritems():
+    for key, value in badge_list.items():
         print("{},{},{},{}".format(value.key,value.addr,value.badge_id,value.project_id))
 
     print("\nBadges:")
-    for key, value in beacon_list.iteritems():
+    for key, value in beacon_list.items():
         print("{},{},{},{}".format(value.key,value.addr,value.badge_id,value.project_id))
 
 

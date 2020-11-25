@@ -2,10 +2,12 @@
 
 #
 .idea
+.vscode/
 
 # local configuration
 devices.txt
 .env*
+.venv/
 
 # temp files and logs
 scan.txt
