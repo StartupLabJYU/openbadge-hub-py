@@ -100,6 +100,10 @@ class SeenDevice():
     """
 
     def __init__(self, ID, rssi, count):
+        if type(ID) == tuple:
+            # Backward compatibility check
+            raise DeprecationWarning("Using deprecated sublist as argument. Extract values.")
+
         self.ID = ID
         self.rssi = rssi
         self.count = count
@@ -262,7 +266,7 @@ class BadgeDelegate(DefaultDelegate):
 
             raw_arr = struct.unpack('<' + num_devices * 'Hbb', data)
 
-            device_arr = [SeenDevice(params) for params in zip(raw_arr[0::3], raw_arr[1::3], raw_arr[2::3])]
+            device_arr = [SeenDevice(*params) for params in zip(raw_arr[0::3], raw_arr[1::3], raw_arr[2::3])]
             self.tempScan.addDevices(device_arr)
             if self.tempScan.completed():
                 # we're done with this, write scan and continue
