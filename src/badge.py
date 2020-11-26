@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 
 
-
 from bluepy import btle
 from bluepy.btle import UUID, Peripheral, DefaultDelegate, AssignedNumbers
 from bluepy.btle import BTLEException
@@ -21,13 +20,13 @@ import time
 WAIT_FOR = 1.0  # timeout for WaitForNotification calls.  Must be > samplePeriod of badge
 PULL_WAIT = 2
 
-RECORDING_TIMEOUT = 3*60 # minutes
+RECORDING_TIMEOUT = 3 * 60  # minutes
 
 # Scan settings. See documentation for more details
 SCAN_WINDOW = 100
 SCAN_INTERVAL = 300
-SCAN_DURATION = 3 # how long each scan lasts
-SCAN_PERIOD = 15 # how often to run a scan
+SCAN_DURATION = 3  # how long each scan lasts
+SCAN_PERIOD = 15  # how often to run a scan
 
 
 class TimeoutError(Exception):
@@ -42,6 +41,7 @@ class timeout:
     """
     Or, to use with a "with" statement
     """
+
     def __init__(self, seconds=1, error_message='Timeout'):
         self.seconds = seconds
         self.error_message = error_message
@@ -58,25 +58,30 @@ class timeout:
 
 
 class Expect:
-    none,status,timestamp,header,samples,scanHeader,scanDevices = range(7)
+    none, status, timestamp, header, samples, scanHeader, scanDevices = range(7)
 
 
 class Chunk():
     """
     #This class is the contents of one chunk of mic data
     """
+
     def __init__(self, header, data):
-        self.ts,self.fract,self.voltage,self.sampleDelay,self.numSamples = header
+        self.ts, self.fract, self.voltage, self.sampleDelay, self.numSamples = header
         self.samples = data[0:]
-    def setHeader(self,header):
-        self.ts,self.fract,self.voltage,self.sampleDelay,self.numSamples = header
+
+    def setHeader(self, header):
+        self.ts, self.fract, self.voltage, self.sampleDelay, self.numSamples = header
+
     def getHeader(self):
-        return (self.ts,self.fract,self.voltage,self.sampleDelay,self.numSamples)
-    def addData(self,data):
+        return (self.ts, self.fract, self.voltage, self.sampleDelay, self.numSamples)
+
+    def addData(self, data):
         self.samples.extend(data)
         if len(self.samples) > self.numSamples:
             print("too many samples received?")
             raise UserWarning("Chunk overflow")
+
     def reset(self):
         self.ts = None
         self.fract = None
@@ -84,6 +89,7 @@ class Chunk():
         self.sampleDelay = None
         self.numSamples = None
         self.samples = []
+
     def completed(self):
         return len(self.samples) >= self.numSamples
 
@@ -92,6 +98,7 @@ class SeenDevice():
     """
     Represents an instance of a proximity data for a device found during a scan
     """
+
     def __init__(self, ID, rssi, count):
         self.ID = ID
         self.rssi = rssi
@@ -107,13 +114,13 @@ class Scan():
         self.ts, self.voltage, self.numDevices = header
         self.devices = devices[0:]
 
-    def setHeader(self,header):
+    def setHeader(self, header):
         self.ts, self.voltage, self.numDevices = header
 
     def getHeader(self):
         return (self.ts, self.voltage, self.numDevices)
 
-    def addDevices(self,devices):
+    def addDevices(self, devices):
         self.devices.extend(devices)
         if len(self.devices) > self.numDevices:
             print("too many devices received?")
@@ -135,37 +142,37 @@ class BadgeDelegate(DefaultDelegate):
     data so external processes can read from it more easy. Reset will
     delete all buffered data
     """
-    tempChunk = Chunk((None,None,None,None,None),[])
+    tempChunk = Chunk((None, None, None, None, None), [])
     tempScan = Scan((None, None, None), [])
 
-    #data is received as chunks, keep the chunk organization
+    # data is received as chunks, keep the chunk organization
     chunks = []
     scans = []
-    #to keep track of the dialogue - data expected to be received next from badge
+    # to keep track of the dialogue - data expected to be received next from badge
     expected = Expect.none
 
     gotStatus = False
     gotTimestamp = False
-    gotEndOfData = False #flag that indicates no more data will be sent
+    gotEndOfData = False  # flag that indicates no more data will be sent
 
     # Parameters received from badge status report
     clockSet = False  # whether the badge's time had been set
-    dataReady = False # whether there's unsent data in FLASH
-    recording = False # whether the badge is collecting samples
-    timestamp_sec = None # badge time in seconds
+    dataReady = False  # whether there's unsent data in FLASH
+    recording = False  # whether the badge is collecting samples
+    timestamp_sec = None  # badge time in seconds
     timestamp_ms = None  # fractional part of badge time
     voltage = None       # badge battery voltage
-    badge_id = None #badge id
-    project_id = None #project id
-    timestamp = None # badge time as timestamp (includes seconds+milliseconds)
+    badge_id = None  # badge id
+    project_id = None  # project id
+    timestamp = None  # badge time as timestamp (includes seconds+milliseconds)
 
     def __init__(self, params):
         btle.DefaultDelegate.__init__(self)
         self.reset()
 
     def reset(self):
-        self.tempChunk = Chunk((None,None,None,None,None),[])
-        self.tempScan = Scan((None,None,None),[])
+        self.tempChunk = Chunk((None, None, None, None, None), [])
+        self.tempScan = Scan((None, None, None), [])
         self.chunks = []
         self.scans = []
 
@@ -177,14 +184,14 @@ class BadgeDelegate(DefaultDelegate):
         self.gotEndOfScans = False
         self.dataReady = False
         self.clockSet = False  # whether the badge's time had been set
-        self.dataReady = False # whether there's unsent data in FLASH
-        self.recording = False # whether the badge is collecting samples
+        self.dataReady = False  # whether there's unsent data in FLASH
+        self.recording = False  # whether the badge is collecting samples
         self.scanning = False
-        self.timestamp_sec = None # badge time in seconds
+        self.timestamp_sec = None  # badge time in seconds
         self.timestamp_ms = None  # fractional part of badge time
         self.voltage = None       # badge battery voltage
 
-        self.timestamp = None # badge time as timestamp (includes seconds+milliseconds)
+        self.timestamp = None  # badge time as timestamp (includes seconds+milliseconds)
 
     def saveTempScan(self):
         # add scan with tempScan's data to list
@@ -194,17 +201,17 @@ class BadgeDelegate(DefaultDelegate):
     def handleNotification(self, cHandle, data):
         if self.expected == Expect.status:  # whether we expect a status packet
             self.dataReady = True
-            self.clockSet,self.scanning,self.recording,self.timestamp_sec,self.timestamp_ms,self.voltage = struct.unpack('<BBBLHf',data)
+            self.clockSet, self.scanning, self.recording, self.timestamp_sec, self.timestamp_ms, self.voltage = struct.unpack('<BBBLHf', data)
             self.gotStatus = True
             self.expected = Expect.none
         elif self.expected == Expect.timestamp:
-            self.timestamp_sec,self.timestamp_ms = struct.unpack('<LH',data)
+            self.timestamp_sec, self.timestamp_ms = struct.unpack('<LH', data)
             self.gotTimestamp = True
             self.expected = Expect.none
         elif self.expected == Expect.header:
             self.tempChunk.reset()
-            self.tempChunk.setHeader(struct.unpack('<LHfHB',data)) #time, fraction time (ms), voltage, sample delay, number of samples
-            if (self.tempChunk.sampleDelay == 0): # got an empty header? done
+            self.tempChunk.setHeader(struct.unpack('<LHfHB', data))  # time, fraction time (ms), voltage, sample delay, number of samples
+            if (self.tempChunk.sampleDelay == 0):  # got an empty header? done
                 self.gotEndOfData = True
                 self.expected = Expect.none
                 pass
@@ -212,14 +219,14 @@ class BadgeDelegate(DefaultDelegate):
                 # self.tempChunk.ts = ts_and_fract_to_float(self.tempChunk.ts, self.tempChunk.fract)
                 self.expected = Expect.samples
 
-        elif self.expected == Expect.samples: # just samples
-            sample_arr = struct.unpack('<%dB' % len(data),data) # Nrfuino bytes are unsigned bytes
+        elif self.expected == Expect.samples:  # just samples
+            sample_arr = struct.unpack('<%dB' % len(data), data)  # Nrfuino bytes are unsigned bytes
             self.tempChunk.addData(sample_arr)
             if self.tempChunk.completed():
                 # add chunk with tempChunk's data to list
                 # print self.tempChunk.ts, self.tempChunk.samples
-                self.chunks.append(Chunk(self.tempChunk.getHeader(),self.tempChunk.samples))
-                self.expected = Expect.header  #we should move on to a new chunk
+                self.chunks.append(Chunk(self.tempChunk.getHeader(), self.tempChunk.samples))
+                self.expected = Expect.header  # we should move on to a new chunk
         elif self.expected == Expect.scanHeader:
             if len(data) == 0:
                 # in one implementation of the badge firmware it sends an empty buffer
@@ -231,10 +238,10 @@ class BadgeDelegate(DefaultDelegate):
                 return
 
             self.tempScan.reset()
-            header = struct.unpack('<LfB',data)
-            self.tempScan.setHeader(header) #timestamp_sec, voltage, number of devices
-            #print self.tempScan.ts
-            if (self.tempScan.ts == 0): # got an empty header? done
+            header = struct.unpack('<LfB', data)
+            self.tempScan.setHeader(header)  # timestamp_sec, voltage, number of devices
+            # print self.tempScan.ts
+            if (self.tempScan.ts == 0):  # got an empty header? done
                 self.gotEndOfScans = True
                 self.expected = Expect.none
             elif self.tempScan.numDevices == 0:
@@ -247,7 +254,7 @@ class BadgeDelegate(DefaultDelegate):
             else:
                 self.expected = Expect.scanDevices
 
-        elif self.expected == Expect.scanDevices: # just devices
+        elif self.expected == Expect.scanDevices:  # just devices
 
             # is there a reason we do this instead of check the scan header?
             # also should we do some sanity checking?
@@ -263,7 +270,6 @@ class BadgeDelegate(DefaultDelegate):
                 self.expected = Expect.scanHeader
         else:  # not expecting any data from badge
             print("Error: not expecting data")
-
 
 
 class BadgeConnection(Nrf):
@@ -292,6 +298,7 @@ class BadgeAddressAdapter(logging.LoggerAdapter):
     """
     Log adapter that passes badge 'addr' to be prepended to the log message.
     """
+
     def process(self, msg, kwargs):
         return '[%s] %s' % (self.extra['addr'], msg), kwargs
 
@@ -392,8 +399,8 @@ class Badge:
             # no value is set yetyet
             return True
 
-    def __init__(self,addr,logger, key,badge_id,project_id, init_audio_ts_int=None, init_audio_ts_fract=None, init_proximity_ts=None, init_voltage=None, init_contact_ts=None,init_unsync_ts=None, init_seen_ts=None, observed_id=None):
-        #if self.children.get(key):
+    def __init__(self, addr, logger, key, badge_id, project_id, init_audio_ts_int=None, init_audio_ts_fract=None, init_proximity_ts=None, init_voltage=None, init_contact_ts=None, init_unsync_ts=None, init_seen_ts=None, observed_id=None):
+        # if self.children.get(key):
         #    return self.children.get(key)
         self.children[key] = self
         self.key = key
@@ -431,21 +438,21 @@ class Badge:
     def sendStatusRequest(self):
         long_epoch_seconds, ts_fract = now_utc_epoch()
         self.dlg.expected = Expect.status
-        return self.conn.write('<cLHHB',"s",long_epoch_seconds,ts_fract,int(self.badge_id), int(self.project_id))
-        #return self.conn.write('<cLH',"s",long_epoch_seconds,ts_fract)
-
+        return self.conn.write('<cLHHB', "s", long_epoch_seconds, ts_fract, int(self.badge_id), int(self.project_id))
+        # return self.conn.write('<cLH',"s",long_epoch_seconds,ts_fract)
 
     # sends request to start recording, with specified timeout
     #   (if after timeout minutes badge has not seen server, it will stop recording)
+
     def sendStartRecRequest(self, timeout):
         long_epoch_seconds, ts_fract = now_utc_epoch()
         self.dlg.gotTimestamp = False
         self.dlg.expected = Expect.timestamp
-        return self.conn.write('<cLHH',"1",long_epoch_seconds,ts_fract,timeout)
+        return self.conn.write('<cLHH', "1", long_epoch_seconds, ts_fract, timeout)
 
     # sends request to stop recording
     def sendStopRec(self):
-        return self.conn.write('<c',"0")
+        return self.conn.write('<c', "0")
 
     # sends request to start scan, with specified timeout and other scan parameters
     #   (if after timeout minutes badge has not seen server, it will stop recording)
@@ -453,14 +460,14 @@ class Badge:
         long_epoch_seconds, ts_fract = now_utc_epoch()
         self.dlg.gotTimestamp = False
         self.dlg.expected = Expect.timestamp
-        return self.conn.write('<cLHHHHHH',"p",long_epoch_seconds,ts_fract,timeout,window,interval,duration,period)
+        return self.conn.write('<cLHHHHHH', "p", long_epoch_seconds, ts_fract, timeout, window, interval, duration, period)
 
     # sends request to stop recording
     def sendStopScan(self):
-        return self.conn.write('<c',"q")
+        return self.conn.write('<c', "q")
 
     def sendIdentifyReq(self, timeout):
-        return self.conn.write('<cH',"i",timeout)
+        return self.conn.write('<cH', "i", timeout)
 
     def sendDataRequest(self, ts, ts_fract):
         """
@@ -471,7 +478,7 @@ class Badge:
         :return:
         """
         self.dlg.expected = Expect.header
-        return self.conn.write('<cLH',"r",ts,ts_fract)
+        return self.conn.write('<cLH', "r", ts, ts_fract)
 
     def sendScanRequest(self, ts):
         """
@@ -481,7 +488,7 @@ class Badge:
         :return:
         """
         self.dlg.expected = Expect.scanHeader
-        return self.conn.write('<cL',"b",ts)
+        return self.conn.write('<cL', "b", ts)
 
     def check_if_synced(self, recordUnsync=True):
         # NOTE - this only works after a status request
@@ -592,7 +599,7 @@ class Badge:
                 self.connect()
 
             self.logger.info("Connected")
-            self.last_contacted_ts=time.time()
+            self.last_contacted_ts = time.time()
 
             # Sending status (and setting ids)
             self.logger.info("Sending status request (Badge id : {} , project id : {})".format(self.badge_id, self.project_id))
@@ -605,7 +612,6 @@ class Badge:
 
                 # got status back - check if the badge was synced or not
                 self.check_if_synced()
-
 
             if activate_audio:
                 # Starting audio rec
@@ -646,7 +652,8 @@ class Badge:
                     continue
                 self.logger.info("Waiting for more data...")
                 wait_count = wait_count + 1
-                if wait_count >= PULL_WAIT: break
+                if wait_count >= PULL_WAIT:
+                    break
             self.logger.info("finished reading data")
 
             # proximity data request since time X
@@ -664,7 +671,8 @@ class Badge:
                     continue
                 self.logger.info("Waiting for more data...")
                 wait_count = wait_count + 1
-                if wait_count >= PULL_WAIT: break
+                if wait_count >= PULL_WAIT:
+                    break
             self.logger.info("finished reading data")
 
             retcode = 0
@@ -731,10 +739,10 @@ def split_ts_float(ts):
     """
     seconds = int(floor(ts))
     fract = int(round((ts - seconds) * 1000))
-    return seconds,fract
+    return seconds, fract
 
 
-def ts_and_fract_to_float(ts_int,ts_fract):
+def ts_and_fract_to_float(ts_int, ts_fract):
     """
     takes integral part and a fraction and converts to float
     :param ts:
@@ -748,7 +756,7 @@ if __name__ == "__main__":
     print("Int and fraction to float")
     ts_int = 1472396048
     ts_fract = 501
-    print("Original values: {} {}".format(ts_int,ts_fract))
+    print("Original values: {} {}".format(ts_int, ts_fract))
     ts_float = ts_and_fract_to_float(ts_int, ts_fract)
     print(ts_float)
     print("%0.3f" % ts_float)
@@ -759,7 +767,7 @@ if __name__ == "__main__":
     print("Float to int and fraction")
     new_ts_int, new_ts_fract = split_ts_float(ts_float)
     print("New values: {} {}".format(new_ts_int, new_ts_fract))
-    print("{} {}".format(type(new_ts_int),type(new_ts_fract)))
+    print("{} {}".format(type(new_ts_int), type(new_ts_fract)))
 
     print("--------------------------")
     # create logger with 'badge_server'
@@ -769,13 +777,12 @@ if __name__ == "__main__":
     logger.info("LALALA")
 
     #logger = logging.getLogger("Test")
-    #logger.setLevel(logging.DEBUG)
+    # logger.setLevel(logging.DEBUG)
 
-    b = Badge("AAAAA",logger,"ABCDE",100,10,100,1,250)
+    b = Badge("AAAAA", logger, "ABCDE", 100, 10, 100, 1, 250)
 
-    print(b.last_audio_ts_int,b.last_audio_ts_fract)
-    b.set_audio_ts(110,1)
+    print(b.last_audio_ts_int, b.last_audio_ts_fract)
+    b.set_audio_ts(110, 1)
     print(b.last_audio_ts_int, b.last_audio_ts_fract)
    # b.set_audio_ts(100,1)
    # print(b.last_audio_ts_int, b.last_audio_ts_fract)
-

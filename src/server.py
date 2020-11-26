@@ -21,6 +21,7 @@ def _badge(x):
     """
     return '{}{}/'.format(BADGES_ENDPOINT, x)
 
+
 def _beacon(x):
     """
     Generates endpoint for a given beacon
@@ -47,6 +48,7 @@ def _data(x):
     """
     return DATAFILES_ENDPOINT.format(x)
 
+
 BADGE_ENDPOINT = _badge
 BEACON_ENDPOINT = _beacon
 DATA_ENDPOINT = _data
@@ -59,14 +61,14 @@ def get_ips():
     :return:
     """
     interfaces = netifaces.interfaces()
-    ips=[]
+    ips = []
     for i in interfaces:
         if i == 'lo':
             continue
         iface = netifaces.ifaddresses(i).get(netifaces.AF_INET)
         if iface is not None:
             for j in iface:
-                ips.append({i:j['addr']})
+                ips.append({i: j['addr']})
 
     ips_json = json.dumps(ips)
     return ips_json

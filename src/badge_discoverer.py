@@ -1,10 +1,7 @@
 #!/usr/bin/env python
 
-
-
-import itertools
 import datetime
-import time
+
 import struct
 import traceback
 from bluepy import btle
@@ -19,13 +16,13 @@ class BadgeDiscoverer(object):
     BLE_GAP_AD_TYPE_SHORT_LOCAL_NAME = 0x08
     BLE_GAP_AD_TYPE_COMPLETE_LOCAL_NAME = 0x09
     BLE_GAP_AD_TYPE_MANUFACTURER_SPECIFIC_DATA = 0xFF
-    CUSTOM_DATA_LEN = 14 # length of badge custom data adv
-    MAC_LENGTH = 6 # length of a MAC address
+    CUSTOM_DATA_LEN = 14  # length of badge custom data adv
+    MAC_LENGTH = 6  # length of a MAC address
 
-    def __init__(self,logger):
+    def __init__(self, logger):
         self.logger = logger
-        
-    def discover(self, scan_duration = 1): #seconds
+
+    def discover(self, scan_duration=1):  # seconds
         btle.Debugging = False
         scanner = btle.Scanner().withDelegate(ScanDummy())
         raw_devices = scanner.scan(scan_duration)
@@ -34,7 +31,8 @@ class BadgeDiscoverer(object):
         for scan_item in raw_devices:
             device_name = None
             for (sdid, desc, val) in scan_item.getScanData():
-                if sdid == self.DEVICE_NAME_FIELD_ID: device_name = val
+                if sdid == self.DEVICE_NAME_FIELD_ID:
+                    device_name = val
 
             if device_name == self.DEVICE_NAME:
                 try:
@@ -44,9 +42,9 @@ class BadgeDiscoverer(object):
                     adv_payload = self.unpack_broadcast_data(scan_item.rawData)
 
                     if not (mac in scan_items):
-                        scan_items[mac] = {'scan_date':scan_date,'rssi':rssi,'adv_payload':adv_payload}
+                        scan_items[mac] = {'scan_date': scan_date, 'rssi': rssi, 'adv_payload': adv_payload}
                     else:
-                        scan_items[mac]['rssi']=rssi
+                        scan_items[mac]['rssi'] = rssi
                         scan_items[mac]['scan_date'] = scan_date
                 except Exception as e:
                     s = traceback.format_exc()
@@ -80,11 +78,10 @@ class BadgeDiscoverer(object):
             field_type = struct.unpack('<B', data[index])[0]
 
             # is it a name field?
-            if (field_type == self.BLE_GAP_AD_TYPE_SHORT_LOCAL_NAME |
-                    field_type == self.BLE_GAP_AD_TYPE_COMPLETE_LOCAL_NAME):
-                name_field = data[index+1:index+field_len]
+            if (field_type in [self.BLE_GAP_AD_TYPE_SHORT_LOCAL_NAME, self.BLE_GAP_AD_TYPE_COMPLETE_LOCAL_NAME]):
+                name_field = data[index + 1:index + field_len]
                 name_as_bytes = struct.unpack('<%dB' % len(name_field), name_field)
-                name = "".join(map(chr, name_as_bytes)) # converts byte to string
+                name = "".join(map(chr, name_as_bytes))  # converts byte to string
 
             # is it the adv payload?
             elif field_type == self.BLE_GAP_AD_TYPE_MANUFACTURER_SPECIFIC_DATA:
@@ -92,11 +89,11 @@ class BadgeDiscoverer(object):
                     payload_field = data[index + 1:index + field_len]
                     payload = struct.unpack('<HBBHB%dB' % self.MAC_LENGTH, payload_field)
                     adv_payload = {}
-                    adv_payload['voltage'] =  1 + 0.01*payload[1]
+                    adv_payload['voltage'] = 1 + 0.01 * payload[1]
                     adv_payload['status_flags'] = payload[2]
                     adv_payload['badge_id'] = payload[3]
                     adv_payload['project_id'] = payload[4]
-                    
+
                     # Check if the 1st bit is set
                     sync_status = 1 if adv_payload['status_flags'] & 0b1 > 0 else 0
                     adv_payload['sync_status'] = sync_status
@@ -109,14 +106,14 @@ class BadgeDiscoverer(object):
                     proximity_status = 1 if adv_payload['status_flags'] & 0b100 > 0 else 0
                     adv_payload['proximity_status'] = proximity_status
 
-                    mac = payload[5:5+self.MAC_LENGTH]
+                    mac = payload[5:5 + self.MAC_LENGTH]
                     mac = list(mac)
                     mac = mac[::-1]  # reverse
                     adv_payload['mac'] = mac
 
             # advance to next field
-            index += field_len;
-        return adv_payload;
+            index += field_len
+        return adv_payload
 
 
 class ScanDummy(btle.DefaultDelegate):
@@ -125,8 +122,8 @@ class ScanDummy(btle.DefaultDelegate):
 
 
 class BeaconDiscoverer(BadgeDiscoverer):
-    
-    def __init__(self,logger):
+
+    def __init__(self, logger):
         super(BeaconDiscoverer, self).__init__(logger)
 
 
@@ -140,4 +137,4 @@ if __name__ == "__main__":
 
     devices = bd.discover()
     for device in devices:
-        print(device,devices[device])
+        print(device, devices[device])

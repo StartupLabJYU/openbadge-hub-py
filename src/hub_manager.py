@@ -14,9 +14,10 @@ from server import HUB_ENDPOINT, HUBS_ENDPOINT, PROJECTS_ENDPOINT, DATA_ENDPOINT
 from server import request_headers
 from urllib.parse import quote_plus
 
-SLEEP_WAIT_SEC = 60 # 1 minute
+SLEEP_WAIT_SEC = 60  # 1 minute
 LONG_TIMEOUT = (9.05, 900)
 DEFAULT_TIMEOUT = (9.05, 15)
+
 
 def get_uuid():
     """
@@ -44,11 +45,10 @@ def send_hub_ip():
     try:
         my_ip = json.load(urlopen('http://jsonip.com'))['ip']
     except Exception as e:
-        s = traceback.format_exc()
-        logger.error('Error getting IP: {} {}'.format(e,s))
+        logger.error('Error getting IP: {}'.format(e), exc_info=True)
         my_ip = '0.0.0.0'
 
-    logger.info("Updating IP for {} ({}) : {}".format(hostname,encoded_hostname,my_ip))
+    logger.info("Updating IP for {} ({}) : {}".format(hostname, encoded_hostname, my_ip))
     try:
         data = {
             'ip_address': my_ip,
@@ -58,7 +58,7 @@ def send_hub_ip():
         response = requests.patch(HUB_ENDPOINT(encoded_hostname), data=data, timeout=DEFAULT_TIMEOUT)
         if response.ok is False:
             raise Exception('Server sent a {} status code instead of 200: {}'.format(response.status_code,
-                                                                                         response.text))
+                                                                                     response.text))
         else:
             logger.debug("Done")
     except Exception as e:
@@ -97,8 +97,7 @@ def _read_hubs_list_from_server(logger, retry=True, retry_delay_sec=5):
                 raise Exception('Got a {} from the server'.format(response.status_code))
 
         except (requests.exceptions.ConnectionError, Exception) as e:
-            s = traceback.format_exc()
-            logger.error("Error reading hubs list from server : {} {}".format(e,s))
+            logger.error("Error reading hubs list from server : {}".format(e), exc_info=True)
             if not retry:
                 done = True
             else:
@@ -118,10 +117,10 @@ def _get_project_id(logger):
     if resp.status_code == 200:
         return resp.json()["key"]
     else:
-        #TODO what do
-        #I don't think this is likely to ever happen, at least
+        # TODO what do
+        # I don't think this is likely to ever happen, at least
         logger.error("Error getting project key from server, status code: {}"
-            .format(resp.status_code))
+                     .format(resp.status_code), exc_info=True)
 
 
 def send_data_to_server(logger, data_type, data):
@@ -143,10 +142,11 @@ def send_data_to_server(logger, data_type, data):
         "data_type": data_type,
         "chunks": data
     }
-    url = DATA_ENDPOINT(project_id) 
+    url = DATA_ENDPOINT(project_id)
     response = requests.request("POST", url, data=json.dumps(payload), headers=headers, timeout=LONG_TIMEOUT)
-    response.raise_for_status() 
+    response.raise_for_status()
     return response.json()["chunks_written"]
+
 
 if __name__ == "__main__":
     register_hub()

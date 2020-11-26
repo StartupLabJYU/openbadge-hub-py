@@ -1,18 +1,20 @@
 #!/usr/bin/env python
 
-
-
 from bluepy import btle
 from bluepy.btle import UUID, Peripheral, DefaultDelegate, AssignedNumbers
 import struct
 import math
- 
-#UUID base used by NRF51 softdevice custom characteristics (like in UART service)
+
+
 def _NRF_UUID(val):
+    """ UUID base used by NRF51 softdevice custom characteristics (like in UART service) """
     return UUID("6e40{}-b5a3-f393-e0a9-e50e24dcca9e".format(val))
-#UUID base for standard BLE characteristics
+
+
 def _BLE_UUID(val):
+    """ UUID base for standard BLE characteristics """
     return UUID("{}-0000-1000-8000-00805f9b34fb".format(val))
+
 
 class SensorBase:
     # Derived classes should set: rxUUID, txUUID, configUUID
@@ -30,8 +32,9 @@ class SensorBase:
 
     def disable(self):
         None
-        #if self.ctrl is not None:
+        # if self.ctrl is not None:
         #    self.ctrl.write(self.sensorOff)
+
 
 class NrfReadWrite(SensorBase):
     rxUUID = _NRF_UUID("0003")
@@ -43,27 +46,29 @@ class NrfReadWrite(SensorBase):
     def read(self):
         return self.rx.read()
 
-    def write(self,arr):
+    def write(self, arr):
         return self.tx.write(arr)
+
 
 class NrfNotifications(SensorBase):
     rxUUID = _NRF_UUID("0003")
-    
+
     # setting up for future use. this feature is not supported by BluePy
     configUUID = _BLE_UUID("00002902")
 
     # instead, we will use the handle directly
     # Handle for characteristic that configures notifications/indications
-    CONFIG_HANDLE = 0x000c;
+    CONFIG_HANDLE = 0x000c
 
     def __init__(self, periph):
         SensorBase.__init__(self, periph)
 
-    def enable(self):  #enable notifications
-        self.periph.writeCharacteristic(handle=self.CONFIG_HANDLE,val=struct.pack('<bb', 0x01, 0x00))
+    def enable(self):  # enable notifications
+        self.periph.writeCharacteristic(handle=self.CONFIG_HANDLE, val=struct.pack('<bb', 0x01, 0x00))
 
-    def disable(self):  #disable notifications/indications
-        self.periph.writeCharacteristic(handle=self.CONFIG_HANDLE,val=struct.pack('<bb', 0x00, 0x00))
+    def disable(self):  # disable notifications/indications
+        self.periph.writeCharacteristic(handle=self.CONFIG_HANDLE, val=struct.pack('<bb', 0x00, 0x00))
+
 
 class SimpleDelegate(DefaultDelegate):
     def __init__(self):
@@ -72,13 +77,15 @@ class SimpleDelegate(DefaultDelegate):
     def handleNotification(self, cHandle, data):
         print(repr(data))
 
+
 class Nrf(Peripheral):
-    def __init__(self,addr):
+    def __init__(self, addr):
         # address type must be random for RFD
-        Peripheral.__init__(self,addr,btle.ADDR_TYPE_RANDOM)
+        Peripheral.__init__(self, addr, btle.ADDR_TYPE_RANDOM)
         # self.discoverServices()
         self.NrfReadWrite = NrfReadWrite(self)
         self.NrfNotifications = NrfNotifications(self)
+
 
 if __name__ == "__main__":
     import time
@@ -87,7 +94,7 @@ if __name__ == "__main__":
     import datetime
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('host', action='store',help='MAC of BT device')
+    parser.add_argument('host', action='store', help='MAC of BT device')
 
     arg = parser.parse_args(sys.argv[1:])
 
@@ -98,7 +105,7 @@ if __name__ == "__main__":
         nrf.NrfReadWrite.enable()
         nrf.NrfNotifications.enable()
         nrf.setDelegate(SimpleDelegate())
-        
+
         while 1:
             if nrf.waitForNotifications(5.0):
                 '''result = struct.unpack('<6Bb',nrf.NrfReadWrite.read())
@@ -106,7 +113,7 @@ if __name__ == "__main__":
                 address = [result[i] for i in range(6)]  #get address as list
                 strength = result[6]  #get signal strength
                 print address, strength '''
-                print("reading: {}".format(struct.unpack('<L',nrf.NrfReadWrite.read())))
+                print("reading: {}".format(struct.unpack('<L', nrf.NrfReadWrite.read())))
         while 1:
             pass
         '''
@@ -132,5 +139,5 @@ if __name__ == "__main__":
             pass
         '''
     finally:
-      nrf.disconnect()
-      del nrf
+        nrf.disconnect()
+        del nrf

@@ -1,10 +1,8 @@
 
 import os
-import re
 import logging
-import requests
 from server import BADGE_ENDPOINT, BADGES_ENDPOINT, request_headers
-from badge import Badge,now_utc_epoch
+from badge import Badge, now_utc_epoch
 from settings import DATA_DIR, LOG_DIR, CONFIG_DIR
 import collections
 
@@ -12,8 +10,8 @@ devices_file = CONFIG_DIR + 'devices.txt'
 
 
 class BadgeManagerStandalone():
-    def __init__(self, logger,timestamp):
-        self._badges= None
+    def __init__(self, logger, timestamp):
+        self._badges = None
         self.logger = logger
         self._device_file = devices_file
 
@@ -22,10 +20,10 @@ class BadgeManagerStandalone():
             self._init_ts_fract = 0
         else:
             self._init_ts, self._init_ts_fract = now_utc_epoch()
-            self._init_ts -= 5 * 60 # start pulling data from the 5 minutes
-        logger.debug("Standalone version. Will request data since {} {}".format(self._init_ts,self._init_ts_fract))
+            self._init_ts -= 5 * 60  # start pulling data from the 5 minutes
+        logger.debug("Standalone version. Will request data since {} {}".format(self._init_ts, self._init_ts_fract))
 
-    def _read_file(self,device_file):
+    def _read_file(self, device_file):
         """
         refreshes an internal list of devices included in device_macs.txt
         Format is device_mac<space>badge_id<space>project_id<space>device_name
@@ -37,10 +35,10 @@ class BadgeManagerStandalone():
             exit(1)
         self.logger.info("Reading devices from file: {}".format(device_file))
 
-        #extracting badge id, project id and mac address
+        # extracting badge id, project id and mac address
         with open(device_file, 'r') as devices_macs:
 
-            badge_project_ids =[]
+            badge_project_ids = []
             devices = []
 
             for line in devices_macs:
@@ -50,21 +48,21 @@ class BadgeManagerStandalone():
                         {"mac": device_details[0],
                          "badge_id": device_details[1],
                          "project_id": device_details[2],
-                        })
+                         })
 
         for d in devices:
             self.logger.debug("    {}".format(d))
 
         badges = {device["mac"]: Badge(device["mac"],
-                            self.logger,
-                            key=device["mac"],  # using mac as key since no other key exists
-                            badge_id=int(device["badge_id"]),
-                            project_id=int(device["project_id"]),
-                            init_audio_ts_int=self._init_ts,
-                            init_audio_ts_fract=self._init_ts_fract,
-                            init_proximity_ts=self._init_ts,
-                            ) for device in devices
-        }
+                                       self.logger,
+                                       key=device["mac"],  # using mac as key since no other key exists
+                                       badge_id=int(device["badge_id"]),
+                                       project_id=int(device["project_id"]),
+                                       init_audio_ts_int=self._init_ts,
+                                       init_audio_ts_fract=self._init_ts_fract,
+                                       init_proximity_ts=self._init_ts,
+                                       ) for device in devices
+                  }
 
         badges = collections.OrderedDict(sorted(badges.items(), key=lambda t: t[1].badge_id))
 
@@ -90,7 +88,7 @@ class BadgeManagerStandalone():
         :param mac:
         :return:
         """
-        pass # not implemented in standalone
+        pass  # not implemented in standalone
 
     def create_badge(self, name, email, mac):
         """
@@ -101,7 +99,7 @@ class BadgeManagerStandalone():
         :return:
         """
         self.logger.debug("Command 'create_badge' is not implemented for standalone mode'")
-        pass # not implemented in standalone
+        pass  # not implemented in standalone
 
     @property
     def badges(self):
@@ -115,6 +113,6 @@ if __name__ == "__main__":
     logger = logging.getLogger('badge_server')
     logger.setLevel(logging.DEBUG)
 
-    mgr = BadgeManagerStandalone(logger=logger,timestamp=1520270000)
+    mgr = BadgeManagerStandalone(logger=logger, timestamp=1520270000)
     mgr.pull_badges_list()
     print(mgr.badges)

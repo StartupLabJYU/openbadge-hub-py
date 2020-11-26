@@ -15,16 +15,14 @@ class BeaconManagerServer:
         self._beacons = None
         self.logger = logger
 
-
     def _jason_beacon_to_object(self, d):
-        conv = lambda x: int(float(x))
         return Badge(d.get('badge'),
-                    self.logger,
-                    d.get('key'),
-                    badge_id = d.get('id'),
-                    project_id = d.get('advertisement_project_id'),
-                    init_voltage=d.get('last_voltage')
-        )
+                     self.logger,
+                     d.get('key'),
+                     badge_id=d.get('id'),
+                     project_id=d.get('advertisement_project_id'),
+                     init_voltage=d.get('last_voltage')
+                     )
 
     def _read_beacons_list_from_server(self, retry=True, retry_delay_sec=5):
         """
@@ -42,7 +40,7 @@ class BeaconManagerServer:
                 if response.ok:
                     self.logger.info("Updating beacons list ({})...".format(len(response.json())))
                     for d in response.json():
-                        if(d.get('active')==True):
+                        if d.get('active') is True:
                             server_beacons[d.get('badge')] = self._jason_beacon_to_object(d)
                     done = True
                 else:
@@ -50,7 +48,7 @@ class BeaconManagerServer:
 
             except (requests.exceptions.ConnectionError, Exception) as e:
                 s = traceback.format_exc()
-                self.logger.error("Error reading beacon list from server : {}, {}".format(e,s))
+                self.logger.error("Error reading beacon list from server : {}, {}".format(e, s))
                 if not retry:
                     done = True
                 else:
@@ -108,7 +106,7 @@ class BeaconManagerServer:
         try:
             beacon = self._beacons[mac]
             data = {
-                'observed_id' : beacon.observed_id,
+                'observed_id': beacon.observed_id,
                 'last_voltage': beacon.last_voltage,
                 'last_seen_ts': beacon.last_seen_ts,
             }
@@ -121,11 +119,11 @@ class BeaconManagerServer:
                     self.logger.debug("Server had more recent date, beacon {} : {}".format(beacon.key, response.text))
                 else:
                     raise Exception('Server sent a {} status code instead of 200: {}'.format(response.status_code,
-                                                                                         response.text))
+                                                                                             response.text))
         except Exception as e:
             self.logger.error('Error sending updated beacon info to server: {}'.format(e))
 
-    def create_beacon(self, name, mac , beacon_id ,project_id):
+    def create_beacon(self, name, mac, beacon_id, project_id):
         """
         Creates a beacon using the giving information
         :param name: user name
@@ -139,7 +137,7 @@ class BeaconManagerServer:
                 'name': name,
                 'badge': mac,
                 'id': beacon_id,
-                'project_id':project_id,
+                'project_id': project_id,
             }
 
             self.logger.info("Creating new beacon : {}".format(data))
@@ -150,8 +148,7 @@ class BeaconManagerServer:
                 raise Exception('Error creating beacon {}. Status: {}, Error: {}, {}'.format(data, response.status_code,
                                                                                              response.text, s))
         except Exception as e:
-            s = traceback.format_exc()
-            self.logger.error('Error creating new beacon. Error: {} ,{}'.format(e,s))
+            self.logger.error('Error creating new beacon. Error: {}'.format(e, s), exc_info=True)
 
     @property
     def beacons(self):

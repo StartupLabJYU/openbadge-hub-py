@@ -1,13 +1,9 @@
 #!/usr/bin/env python
 
-
-
 import os
-import re
 import shlex
 import subprocess
 import signal
-import csv
 
 import logging
 import json
@@ -24,7 +20,7 @@ from badge_manager_server import BadgeManagerServer
 from beacon_manager_server import BeaconManagerServer
 from badge_manager_standalone import BadgeManagerStandalone
 from beacon_manager_standalone import BeaconManagerStandalone
-import hub_manager 
+import hub_manager
 from settings import DATA_DIR, LOG_DIR
 
 log_file_name = LOG_DIR + 'hub.log'
@@ -42,8 +38,8 @@ PROXIMITY = "proximity"
 
 SCAN_DURATION = 3  # seconds
 
-#NOTE try to keep under 100MB or so due to memory constraints
-MAX_PENDING_FILE_SIZE = 15000000 # in bytes, so 15MB
+# NOTE try to keep under 100MB or so due to memory constraints
+MAX_PENDING_FILE_SIZE = 15000000  # in bytes, so 15MB
 
 # create logger with 'badge_server'
 logger = logging.getLogger('badge_server')
@@ -82,11 +78,11 @@ def has_chunks(filename):
 def offload_data():
     """
     Send pending files to server and move pending to archive
-    
+
     Return True on success, False on failure
     """
-    #TODO test with standalone
-    #NOTE not currently doing anything with the True/False
+    # TODO test with standalone
+    # NOTE not currently doing anything with the True/False
     # return values, might decide to do something later
     pending_files = sorted(glob.glob(pending_file_prefix + "*"))
     for pending_file_name in pending_files:
@@ -107,25 +103,24 @@ def offload_data():
             chunks_written = hub_manager.send_data_to_server(logger, data_type, chunks)
             if chunks_written == len(chunks):
                 logger.debug("Successfully wrote {} data entries to server"
-                    .format(len(chunks)))
+                             .format(len(chunks)))
             else:
                 # this seems unlikely to happen but is good to keep track of i guess
                 logger.error("Data mismatch: {} data entries were not written to server"
-                    .format(len(chunks) - chunks_written))
+                             .format(len(chunks) - chunks_written))
                 logger.error("Error sending data from file {} to server!"
-                    .format(pending_file_name))
+                             .format(pending_file_name))
                 return False
-                
+
             # write to archive and erase pending file
             with open(get_archive_name(data_type), "a") as archive_file:
                 for chunk in chunks:
                     archive_file.write(json.dumps(chunk) + "\n")
             os.remove(pending_file_name)
         except RequestException as e:
-            s = traceback.format_exc()
             logger.error("Error sending data from file {} to server!"
-                .format(pending_file_name))
-            logger.error("{},{}".format(e,s))
+                         .format(pending_file_name))
+            logger.error(repr(e), exc_info=True)
             return False
     return True
 
@@ -138,6 +133,7 @@ def get_archive_name(data_type):
         return audio_archive_file_name
     else:
         return proximity_archive_file_name
+
 
 def get_proximity_name(mode="server"):
     """
@@ -174,7 +170,7 @@ def _get_pending_file_name(data_type):
 def _create_pending_file_name(data_type):
     """
     Create a pending file name for the given data_type
-    
+
     Uses the current date/time to create a unique filename
     """
     now = dt.now().strftime("%Y%m%d%H%M%S")
@@ -184,11 +180,11 @@ def _create_pending_file_name(data_type):
         # get the number of pending files that match this time and add one
         files = glob.glob("{}{}*{}*".format(pending_file_prefix, now, data_type))
         now = '_'.join((now, str(len(files) + 1)))
-        filename =  "{}{}_{}.txt".format(pending_file_prefix, now, data_type)
+        filename = "{}{}_{}.txt".format(pending_file_prefix, now, data_type)
 
-    return filename 
+    return filename
 
-     
+
 def dialogue(bdg, activate_audio, activate_proximity, mode="server"):
     """
     Attempts to read data from the device specified by the address. Reading is handled by gatttool.
@@ -224,13 +220,13 @@ def dialogue(bdg, activate_audio, activate_proximity, mode="server"):
                         'samples': chunk.samples,
                         'badge_address': addr,
                         'member': bdg.key,
-                        'member_id':bdg.badge_id
+                        'member_id': bdg.badge_id
                     }
                 }
 
                 logger.debug("Chunk timestamp: {0:.3f}, Voltage: {1:.3f}, Delay: {2}, Samples in chunk: {3}".format(
                     ts_with_ms, chunk.voltage, chunk.sampleDelay, len(chunk.samples)))
-                #logger.debug(json.dumps(log_line))
+                # logger.debug(json.dumps(log_line))
                 json.dump(log_line, fout)
                 fout.write('\n')
 
@@ -243,8 +239,7 @@ def dialogue(bdg, activate_audio, activate_proximity, mode="server"):
             bdg.set_audio_ts(last_chunk.ts, last_chunk.fract)
         else:
             logger.debug("Keeping existing timestamp ({}.{}) for {}. Last chunk timestamp was: {}.{}"
-                              .format(bdg.last_audio_ts_int,bdg.last_audio_ts_fract,bdg.addr, last_chunk.ts, last_chunk.fract))
-
+                         .format(bdg.last_audio_ts_int, bdg.last_audio_ts_fract, bdg.addr, last_chunk.ts, last_chunk.fract))
 
     else:
         logger.info("No mic data ready")
@@ -266,7 +261,7 @@ def dialogue(bdg, activate_audio, activate_proximity, mode="server"):
                         'rssi_distances':
                             {
                                 device.ID: {'rssi': device.rssi, 'count': device.count} for device in scan.devices
-                                },
+                        },
                         'member': bdg.key,
                         'member_id': bdg.badge_id
                     }
@@ -274,7 +269,7 @@ def dialogue(bdg, activate_audio, activate_proximity, mode="server"):
 
                 logger.debug("SCAN: scan timestamp: {0:.3f}, voltage: {1:.3f}, Devices in scan: {2}".format(
                     ts_with_ms, scan.voltage, scan.numDevices))
-                #logger.info(json.dumps(log_line))
+                # logger.info(json.dumps(log_line))
 
                 json.dump(log_line, fout)
                 fout.write('\n')
@@ -291,15 +286,15 @@ def scan_for_devices(devices_whitelist, show_all=False):
     bd = BadgeDiscoverer(logger)
     try:
         all_devices = bd.discover(scan_duration=SCAN_DURATION)
-    except Exception as e: # catch *all* exceptions
+    except Exception as e:  # catch *all* exceptions
         logger.error("Scan failed,{}".format(e))
         all_devices = {}
 
     scanned_devices = []
-    for addr,device_info in all_devices.items():
+    for addr, device_info in all_devices.items():
         if addr in devices_whitelist:
             logger.debug("\033[1;7m\033[1;32mFound {}, added. Device info: {}\033[0m".format(addr, device_info))
-            scanned_devices.append({'mac':addr,'device_info':device_info})
+            scanned_devices.append({'mac': addr, 'device_info': device_info})
         else:
             if show_all:
                 logger.debug("Found {}, but not on whitelist. Device info: {}".format(addr, device_info))
@@ -313,15 +308,15 @@ def scan_for_bc_devices(devices_whitelist, show_all=False):
     bc = BeaconDiscoverer(logger)
     try:
         all_bc_devices = bc.discover(scan_duration=SCAN_DURATION)
-    except Exception as e: # catch *all* exceptions
+    except Exception as e:  # catch *all* exceptions
         logger.error("Scan failed,{}".format(e))
         all_bc_devices = {}
 
     scanned_bc_devices = []
-    for addr,device_info in all_bc_devices.items():
+    for addr, device_info in all_bc_devices.items():
         if addr in devices_whitelist:
             logger.debug("\033[1;7m\033[1;32mFound {}, added. Device info: {}\033[0m".format(addr, device_info))
-            scanned_bc_devices.append({'mac':addr,'device_info':device_info})
+            scanned_bc_devices.append({'mac': addr, 'device_info': device_info})
         else:
             if show_all:
                 logger.debug("Found {}, but not on whitelist. Device info: {}".format(addr, device_info))
@@ -331,19 +326,19 @@ def scan_for_bc_devices(devices_whitelist, show_all=False):
     return scanned_bc_devices
 
 
-def create_badge_manager_instance(mode,timestamp):
+def create_badge_manager_instance(mode, timestamp):
     if mode == "server":
         mgr = BadgeManagerServer(logger=logger)
     else:
-        mgr = BadgeManagerStandalone(logger=logger,timestamp=timestamp)
+        mgr = BadgeManagerStandalone(logger=logger, timestamp=timestamp)
     return mgr
 
 
-def create_beacon_manager_instance(mode,timestamp):
+def create_beacon_manager_instance(mode, timestamp):
     if mode == "server":
         mgrb = BeaconManagerServer(logger=logger)
     else:
-        mgrb = BeaconManagerStandalone(logger=logger,timestamp=timestamp)
+        mgrb = BeaconManagerStandalone(logger=logger, timestamp=timestamp)
     return mgrb
 
 
@@ -371,7 +366,6 @@ def reset():
     else:
         logger.warn("Not a Raspberry Pi, Bluetooth connection parameters remain untouched (communication may be slower)")
 
-
     time.sleep(2)  # requires sleep after reset
     logger.info("Done resetting bluetooth")
 
@@ -379,13 +373,13 @@ def reset():
 def kill_bluepy():
     """
     Kill orphaned/leftover/defunct bluepy-helper processes
-    
+
     I'd like to move this to a separate utility file or something when 
         we refactor
     """
     # get all the bluepy-helper processes
-    CMD="/bin/ps ax | grep bluepy-helper | grep -v grep | awk '{ print $1 }'"
-    p = subprocess.Popen(CMD, shell=True, stdout=subprocess.PIPE) 
+    CMD = "/bin/ps ax | grep bluepy-helper | grep -v grep | awk '{ print $1 }'"
+    p = subprocess.Popen(CMD, shell=True, stdout=subprocess.PIPE)
     pidstr = p.communicate()[0]
     pids = pidstr.split("\n")
     pids = [int(pid) for pid in pids if pid.isdigit()]
@@ -394,18 +388,18 @@ def kill_bluepy():
     # dont wanna kill our process by accident :)
     if mypid in pids:
         pids.remove(mypid)
-    
+
     for pid in pids:
         # KILL KILL KILL
         try:
             os.kill(int(pid), signal.SIGKILL)
             # we waitpid to clean up defunct processes
-            os.waitpid(int(pid), 0)         
+            os.waitpid(int(pid), 0)
             logger.info("Process with PID {} killed".format(pid))
         except OSError as err:
             logger.error("Unable to kill process with pid {}".format(pid))
             logger.error(err)
-        
+
 
 def pull_devices(mgr, mgrb, start_recording):
     logger.info('Started pulling')
@@ -423,7 +417,7 @@ def pull_devices(mgr, mgrb, start_recording):
         activate_audio = False
         activate_proximity = False
 
-    logger.info("Start recording: Audio = {}, Proximity = {}".format(activate_audio,activate_proximity))
+    logger.info("Start recording: Audio = {}, Proximity = {}".format(activate_audio, activate_proximity))
     mode = "server" if isinstance(mgr, BadgeManagerServer) else "standalone"
 
     while True:
@@ -445,7 +439,7 @@ def pull_devices(mgr, mgrb, start_recording):
         # voltages to the server (and update heartbeat on server)
         for device in scanned_devices:
             b = mgr.badges.get(device['mac'])
-            # i don't think adv_payload is ever supposed to be empty, 
+            # i don't think adv_payload is ever supposed to be empty,
             # but sometimes it is. and when it is, it breaks
             if device['device_info']['adv_payload'] is not None:
                 b.last_voltage = device['device_info']['adv_payload']['voltage']
@@ -454,15 +448,15 @@ def pull_devices(mgr, mgrb, start_recording):
                 if b.observed_id != b.badge_id or b.project_id != observed_project_id:
                     logger.debug("Warning! Observed IDs do not match server settings. "
                                  "Observed: member_id:{}, project_id:{}. Expected: member_id:{}. project_id: {}"
-                                 .format(b.observed_id,observed_project_id,b.badge_id,b.project_id))
+                                 .format(b.observed_id, observed_project_id, b.badge_id, b.project_id))
 
             b.last_seen_ts = time.time()
 
             mgr.send_badge(device['mac'])
 
-        # now the actual data collection 
+        # now the actual data collection
         for device in scanned_devices:
-            # try to update latest badge timestamps from the server 
+            # try to update latest badge timestamps from the server
             mac = device['mac']
             pull_success = mgr.pull_badge(mac)
             if not pull_success:
@@ -496,7 +490,7 @@ def pull_devices(mgr, mgrb, start_recording):
                 if bcn.observed_id != bcn.badge_id or bcn.project_id != observed_project_id:
                     logger.debug("Warning! Observed IDs do not match server settings. "
                                  "Observed: beacon_id:{}, project_id:{}. Expected: beacon_id:{}. project_id: {}"
-                                 .format(bcn.observed_id,observed_project_id,bcn.badge_id,bcn.project_id))
+                                 .format(bcn.observed_id, observed_project_id, bcn.badge_id, bcn.project_id))
 
             bcn.last_seen_ts = time.time()
 
@@ -511,11 +505,10 @@ def pull_devices(mgr, mgrb, start_recording):
                 if bcn.badge_id != observed_id or bcn.project_id != observed_project_id:
                     bcn.sync_timestamp()
                     mgrb.send_beacon(device['mac'])
-            
+
             time.sleep(2)
 
         time.sleep(2)  # allow BLE time to disconnect
-
 
         # clean up any leftover bluepy processes
         kill_bluepy()
@@ -570,21 +563,20 @@ def start_all_devices(mgr):
         logger.info("Scanning for devices...")
         scanned_devices = scan_for_devices(list(mgr.badges.keys()))
         for device in scanned_devices:
- 
+
             dev_info = device['device_info']
-            
-            if dev_info ['adv_payload']:
-                sync = dev_info ['adv_payload']['sync_status']
-                audio = dev_info ['adv_payload']['audio_status']
-                proximity = dev_info ['adv_payload']['proximity_status']
-                badge_id = dev_info ['adv_payload']['badge_id']
-                project_id = dev_info ['adv_payload']['project_id']
-                
-                
+
+            if dev_info['adv_payload']:
+                sync = dev_info['adv_payload']['sync_status']
+                audio = dev_info['adv_payload']['audio_status']
+                proximity = dev_info['adv_payload']['proximity_status']
+                badge_id = dev_info['adv_payload']['badge_id']
+                project_id = dev_info['adv_payload']['project_id']
+
                 if sync == 0 or audio == 0 or proximity == 0:
-                    if(project_id==0):
+                    if(project_id == 0):
                         logger.info("changing project ids {}".format(device['mac']))
-                        
+
                         logger.info("Starting {}".format(device['mac']))
                         bdg = mgr.badges.get(device['mac'])
                         bdg.start_recording()
@@ -611,24 +603,22 @@ def print_badges(mgr, mgrb):
 
     print("Members:")
     for key, value in badge_list.items():
-        print("{},{},{},{}".format(value.key,value.addr,value.badge_id,value.project_id))
+        print("{},{},{},{}".format(value.key, value.addr, value.badge_id, value.project_id))
 
     print("\nBadges:")
     for key, value in beacon_list.items():
-        print("{},{},{},{}".format(value.key,value.addr,value.badge_id,value.project_id))
+        print("{},{},{},{}".format(value.key, value.addr, value.badge_id, value.project_id))
 
 
 def add_pull_command_options(subparsers):
     pull_parser = subparsers.add_parser('pull', help='Continuously pull data from badges')
-    pull_parser.add_argument('-r','--start_recording'
-                             , choices=('audio', 'proximity', 'both','none'), required=False
-                             , default='both'
-                             , dest='start_recording',help='data recording option')
+    pull_parser.add_argument('-r', '--start_recording', choices=('audio', 'proximity', 'both', 'none'),
+                             required=False, default='both', dest='start_recording', help='data recording option')
 
 
 def add_scan_command_options(subparsers):
     scan_parser = subparsers.add_parser('scan', help='Continuously scan for badges')
-    scan_parser.add_argument('-a','--show_all', action='store_true', default=False, help="Show all devices")
+    scan_parser.add_argument('-a', '--show_all', action='store_true', default=False, help="Show all devices")
 
 
 def add_sync_all_command_options(subparsers):
@@ -648,13 +638,10 @@ if __name__ == "__main__":
     import argparse
 
     parser = argparse.ArgumentParser(description="Run scans, send dates, or continuously pull data")
-    parser.add_argument('-dr','--disable_reset_ble', action='store_true', default=False, help="Do not reset BLE")
-    parser.add_argument('-m','--hub_mode', choices=('server', 'standalone')
-                        , default='standalone', dest='hub_mode'
-                        , help="Operation mode - standalone (using a configuration file) or a server")
-    parser.add_argument('-t', '--timestamp'
-                             , type=int, required=False
-                             , dest='timestamp', help='UTC timestamp to start pulling data from (int)')
+    parser.add_argument('-dr', '--disable_reset_ble', action='store_true', default=False, help="Do not reset BLE")
+    parser.add_argument('-m', '--hub_mode', choices=('server', 'standalone'), default='standalone', dest='hub_mode',
+                        help="Operation mode - standalone (using a configuration file) or a server")
+    parser.add_argument('-t', '--timestamp', type=int, required=False, dest='timestamp', help='UTC timestamp to start pulling data from (int)')
 
     subparsers = parser.add_subparsers(help='Program mode (e.g. Scan, send dates, pull, scan etc.)', dest='mode')
     add_pull_command_options(subparsers)
@@ -672,11 +659,11 @@ if __name__ == "__main__":
         reset()
 
     if args.mode == "sync_all":
-        sync_all_devices(mgr)  
+        sync_all_devices(mgr)
 
     # scan for devices
     if args.mode == "scan":
-        devices_scanner(mgr,mgrb, args.show_all)
+        devices_scanner(mgr, mgrb, args.show_all)
 
     # pull data from all devices
     if args.mode == "pull":

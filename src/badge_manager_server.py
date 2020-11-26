@@ -7,6 +7,7 @@ from server import BADGE_ENDPOINT, BADGES_ENDPOINT, BEACON_ENDPOINT, BEACONS_END
 from settings import APPKEY, HUB_UUID
 import traceback
 
+
 class BadgeManagerServer:
     DEFAULT_TIMEOUT = (9.05, 15)
 
@@ -15,20 +16,20 @@ class BadgeManagerServer:
         self.logger = logger
 
     def _jason_badge_to_object(self, d):
-        conv = lambda x: int(float(x))
+        def conv(x): return int(float(x))
         return Badge(d.get('badge'),
-                    self.logger,
-                    d.get('key'),
-                    badge_id = d.get('id'),
-                    project_id = d.get('advertisement_project_id'),
-                    init_audio_ts_int=conv(d.get('last_audio_ts')),
-                    init_audio_ts_fract=conv(d.get('last_audio_ts_fract')),
-                    init_proximity_ts=conv(d.get('last_proximity_ts')),
-                    init_voltage=d.get('last_voltage'),
-                    init_contact_ts = d.get('last_contacted_ts'),
-                    init_unsync_ts = d.get('last_unsync_ts')
+                     self.logger,
+                     d.get('key'),
+                     badge_id=d.get('id'),
+                     project_id=d.get('advertisement_project_id'),
+                     init_audio_ts_int=conv(d.get('last_audio_ts')),
+                     init_audio_ts_fract=conv(d.get('last_audio_ts_fract')),
+                     init_proximity_ts=conv(d.get('last_proximity_ts')),
+                     init_voltage=d.get('last_voltage'),
+                     init_contact_ts=d.get('last_contacted_ts'),
+                     init_unsync_ts=d.get('last_unsync_ts')
 
-        )
+                     )
 
     def _read_badges_list_from_server(self, retry=True, retry_delay_sec=5):
         """
@@ -46,7 +47,7 @@ class BadgeManagerServer:
                 if response.ok:
                     self.logger.info("Updating devices list ({})...".format(len(response.json())))
                     for d in response.json():
-                        if(d.get('active')==True):
+                        if(d.get('active') == True):
                             server_badges[d.get('badge')] = self._jason_badge_to_object(d)
 
                     done = True
@@ -55,7 +56,7 @@ class BadgeManagerServer:
 
             except (requests.exceptions.ConnectionError, Exception) as e:
                 s = traceback.format_exc()
-                self.logger.error("Error reading badges list from server : {}, {}".format(e,s))
+                self.logger.error("Error reading badges list from server : {}, {}".format(e, s))
                 if not retry:
                     done = True
                 else:
@@ -111,8 +112,8 @@ class BadgeManagerServer:
             # this could happen if a badge is reassigned in between iterations
             # and would result in associating the data from the badge with the wrong user
             self.logger.warn(
-                    "Badge / Server Mac Address mismatch for badge: {}"
-                    .format(mac))
+                "Badge / Server Mac Address mismatch for badge: {}"
+                .format(mac))
             return False
         else:
             self._badges[mac] = server_badge
@@ -145,11 +146,11 @@ class BadgeManagerServer:
                     self.logger.debug("Server had more recent date, badge {} : {}".format(badge.key, response.text))
                 else:
                     raise Exception('Server sent a {} status code instead of 200: {}'.format(response.status_code,
-                                                                                         response.text))
+                                                                                             response.text))
         except Exception as e:
             self.logger.error('Error sending updated badge into to server: {}'.format(e))
 
-    def create_badge(self, name, email, mac ):
+    def create_badge(self, name, email, mac):
         """
         Creates a badge using the giving information
         :param name: user name
@@ -170,12 +171,10 @@ class BadgeManagerServer:
             if response.ok is False:
                 s = traceback.format_exc()
                 raise Exception('Error creating badge {}. Status: {}, Error: {}, {}'.format(data, response.status_code,
-                                                                                             response.text, s))
+                                                                                            response.text, s))
         except Exception as e:
             s = traceback.format_exc()
-            self.logger.error('Error creating new badge. Error: {} ,{}'.format(e,s))
-
-
+            self.logger.error('Error creating new badge. Error: {} ,{}'.format(e, s))
 
     @property
     def badges(self):
