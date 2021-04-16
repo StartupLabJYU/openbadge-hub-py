@@ -379,7 +379,7 @@ def kill_bluepy():
     """
     # get all the bluepy-helper processes
     CMD = "/bin/ps ax | grep bluepy-helper | grep -v grep | awk '{ print $1 }'"
-    p = subprocess.Popen(CMD, shell=True, stdout=subprocess.PIPE)
+    p = subprocess.Popen(CMD, shell=True, universal_newlines=True, stdout=subprocess.PIPE)
     pidstr = p.communicate()[0]
     pids = pidstr.split("\n")
     pids = [int(pid) for pid in pids if pid.isdigit()]
