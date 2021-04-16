@@ -31,8 +31,8 @@ SCAN_PERIOD = 15  # how often to run a scan
 
 class TimeoutError(Exception):
     """
-    # Raises a timeout exception if a function takes too long
-    # http://stackoverflow.com/questions/2281850/timeout-function-if-it-takes-too-long-to-finish
+    Raises a timeout exception if a function takes too long
+    http://stackoverflow.com/questions/2281850/timeout-function-if-it-takes-too-long-to-finish
     """
     pass
 
@@ -102,7 +102,7 @@ class SeenDevice():
     def __init__(self, ID, rssi, count):
         if type(ID) == tuple:
             # Backward compatibility check
-            raise DeprecationWarning("Using deprecated sublist as argument. Extract values.")
+            raise DeprecationWarning("Using deprecated sublist as argument. Extract values into ID, rss, count.")
 
         self.ID = ID
         self.rssi = rssi
@@ -262,7 +262,7 @@ class BadgeDelegate(DefaultDelegate):
 
             # is there a reason we do this instead of check the scan header?
             # also should we do some sanity checking?
-            num_devices = int(len(data)/4)
+            num_devices = int(len(data) / 4)
 
             raw_arr = struct.unpack('<' + num_devices * 'Hbb', data)
 
@@ -311,18 +311,6 @@ class Badge:
     children = {}
 
     @property
-    def badge_id(self):
-        return self.badge_id
-
-    @property
-    def observed_id(self):
-        return self.observed_id
-
-    @property
-    def project_id(self):
-        return self.project_id
-
-    @property
     def last_proximity_ts(self):
         return self.__last_proximity_ts
 
@@ -337,10 +325,6 @@ class Badge:
     @property
     def last_seen_ts(self):
         return self.__last_seen_ts
-
-    @property
-    def last_voltage(self):
-        return self.last_voltage
 
     @last_proximity_ts.setter
     def last_proximity_ts(self, value):
@@ -780,7 +764,7 @@ if __name__ == "__main__":
     logger.setLevel(logging.DEBUG)
     logger.info("LALALA")
 
-    #logger = logging.getLogger("Test")
+    # logger = logging.getLogger("Test")
     # logger.setLevel(logging.DEBUG)
 
     b = Badge("AAAAA", logger, "ABCDE", 100, 10, 100, 1, 250)
@@ -788,5 +772,5 @@ if __name__ == "__main__":
     print(b.last_audio_ts_int, b.last_audio_ts_fract)
     b.set_audio_ts(110, 1)
     print(b.last_audio_ts_int, b.last_audio_ts_fract)
-   # b.set_audio_ts(100,1)
-   # print(b.last_audio_ts_int, b.last_audio_ts_fract)
+    # b.set_audio_ts(100,1)
+    # print(b.last_audio_ts_int, b.last_audio_ts_fract)
