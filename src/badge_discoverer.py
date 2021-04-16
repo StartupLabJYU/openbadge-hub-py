@@ -73,9 +73,9 @@ class BadgeDiscoverer(object):
         index = 0
         name = None
         while ((adv_payload is None) | (name is None)) & (index < data_length):
-            field_len = struct.unpack('<B', data[index])[0]
+            field_len = struct.unpack('<B', data[index:index + 1])[0]
             index += 1
-            field_type = struct.unpack('<B', data[index])[0]
+            field_type = struct.unpack('<B', data[index:index + 1])[0]
 
             # is it a name field?
             if (field_type in [self.BLE_GAP_AD_TYPE_SHORT_LOCAL_NAME, self.BLE_GAP_AD_TYPE_COMPLETE_LOCAL_NAME]):
