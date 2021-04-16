@@ -294,9 +294,9 @@ class BadgeConnection(Nrf):
         return arr
 
     def write(self, fmt, *arr):
+        logging.debug("Writing data to badge: %s -> %s" % (fmt, map(repr, arr)))
         s = struct.pack(fmt, *arr)
         return self.NrfReadWrite.write(s)
-
 
 class BadgeAddressAdapter(logging.LoggerAdapter):
     """
@@ -426,7 +426,7 @@ class Badge:
     def sendStatusRequest(self):
         long_epoch_seconds, ts_fract = now_utc_epoch()
         self.dlg.expected = Expect.status
-        return self.conn.write('<cLHHB', "s", long_epoch_seconds, ts_fract, int(self.badge_id), int(self.project_id))
+        return self.conn.write('<cLHHB', b"s", long_epoch_seconds, ts_fract, int(self.badge_id), int(self.project_id))
         # return self.conn.write('<cLH',"s",long_epoch_seconds,ts_fract)
 
     # sends request to start recording, with specified timeout
@@ -436,11 +436,11 @@ class Badge:
         long_epoch_seconds, ts_fract = now_utc_epoch()
         self.dlg.gotTimestamp = False
         self.dlg.expected = Expect.timestamp
-        return self.conn.write('<cLHH', "1", long_epoch_seconds, ts_fract, timeout)
+        return self.conn.write('<cLHH', b'1', long_epoch_seconds, ts_fract, timeout)
 
     # sends request to stop recording
     def sendStopRec(self):
-        return self.conn.write('<c', "0")
+        return self.conn.write('<c', b"0")
 
     # sends request to start scan, with specified timeout and other scan parameters
     #   (if after timeout minutes badge has not seen server, it will stop recording)
@@ -448,14 +448,14 @@ class Badge:
         long_epoch_seconds, ts_fract = now_utc_epoch()
         self.dlg.gotTimestamp = False
         self.dlg.expected = Expect.timestamp
-        return self.conn.write('<cLHHHHHH', "p", long_epoch_seconds, ts_fract, timeout, window, interval, duration, period)
+        return self.conn.write('<cLHHHHHH', b"p", long_epoch_seconds, ts_fract, timeout, window, interval, duration, period)
 
     # sends request to stop recording
     def sendStopScan(self):
-        return self.conn.write('<c', "q")
+        return self.conn.write('<c', b"q")
 
     def sendIdentifyReq(self, timeout):
-        return self.conn.write('<cH', "i", timeout)
+        return self.conn.write('<cH', b"i", timeout)
 
     def sendDataRequest(self, ts, ts_fract):
         """
@@ -466,7 +466,7 @@ class Badge:
         :return:
         """
         self.dlg.expected = Expect.header
-        return self.conn.write('<cLH', "r", ts, ts_fract)
+        return self.conn.write('<cLH', b"r", ts, ts_fract)
 
     def sendScanRequest(self, ts):
         """
@@ -476,7 +476,7 @@ class Badge:
         :return:
         """
         self.dlg.expected = Expect.scanHeader
-        return self.conn.write('<cL', "b", ts)
+        return self.conn.write('<cL', b"b", ts)
 
     def check_if_synced(self, recordUnsync=True):
         # NOTE - this only works after a status request
