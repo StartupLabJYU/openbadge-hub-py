@@ -31,11 +31,10 @@ Important notes:
 * Choose different project ids for different projects that are running at the same time. This will prevent id conflicts
 * For project id, pick a number between 1 and 254. Avoid using project id 0 since this is the default value for ibeacons
 
-Next, use docker-compose to run the hub itself. You can either use the dev_ubuntu.yml (for linux, mac or windows) or
-dev_jessie.yml (if you are using raspberry pi). For example:
+Next, use docker-compose to run the hub itself. For example:
 ```
-docker-compose -f dev_ubuntu.yml build
-docker-compose -f dev_ubuntu.yml up
+docker-compose -f dev_python3.yml build openbadge-hub-py
+docker-compose -f dev_python3.yml up openbadge-hub-py
 ```
 
 For convenience, we mount the local source files, data, logs and config directories as volumes in docker. This allows
@@ -43,7 +42,7 @@ faster builds and easier access to the data generated in this mode.
 
 Note - by default, docker will start the hub in standalone mode. However, you can override the command parameters:
 ```
-docker-compose -f dev_ubuntu.yml run openbadge-hub-py -m server pull
+docker-compose -f dev_python3.yml run openbadge-hub-py -m server pull
 ```
 
 If you choose to run the hub in server more, remember to create a .env file and set the parameters accordingly. See the
@@ -51,7 +50,7 @@ next section for more information.
 
 In order to get an interactive shell for the hub container, you need to overwrite the entrypoint:
 ```
-docker-compose -f dev_ubuntu.yml run --entrypoint /bin/bash openbadge-hub-py
+docker-compose -f dev_python3.yml run --entrypoint /bin/bash openbadge-hub-py
 ```
 
 # Deployment
