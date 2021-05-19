@@ -322,10 +322,6 @@ class Badge:
     def last_unsync_ts(self):
         return self.__last_unsync_ts
 
-    @property
-    def last_seen_ts(self):
-        return self.__last_seen_ts
-
     @last_proximity_ts.setter
     def last_proximity_ts(self, value):
         if value < self.__last_proximity_ts:
@@ -408,7 +404,7 @@ class Badge:
         self.__last_proximity_ts = init_proximity_ts
         self.__last_contacted_ts = init_contact_ts
         self.__last_unsync_ts = init_unsync_ts
-        self.__last_seen_ts = init_seen_ts
+        self.last_seen_ts = init_seen_ts
 
     def connect(self):
         self.logger.info("Connecting to {}".format(self.addr))
