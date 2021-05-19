@@ -1,10 +1,10 @@
-version: '2'
+version: '3'
 
 services:
   openbadge-hub-py:
     build:
       context: .
-      dockerfile: ./compose/openbadge-hub-py/Dockerfile_ubuntu_dev
+      dockerfile: ./compose/openbadge-hub-py/Dockerfile
     volumes:
       - ./src:/app
       - ./data:/data
@@ -20,7 +20,7 @@ services:
   aws-backup:
     build:
       context: .
-      dockerfile: ./compose/aws-backup/Dockerfile_ubuntu
+      dockerfile: ./compose/aws-backup/Dockerfile
     env_file: .env
     volumes:
       - ./data:/data:ro
