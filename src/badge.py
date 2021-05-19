@@ -383,7 +383,7 @@ class Badge:
             # no value is set yetyet
             return True
 
-    def __init__(self, addr, logger, key, badge_id, project_id, init_audio_ts_int=None, init_audio_ts_fract=None, init_proximity_ts=None, init_voltage=None, init_contact_ts=None, init_unsync_ts=None, init_seen_ts=None, observed_id=None):
+    def __init__(self, addr, logger, key, badge_id, project_id, init_audio_ts_int=None, init_audio_ts_fract=None, init_proximity_ts=0.0, init_voltage=None, init_contact_ts=0.0, init_unsync_ts=0.0, init_seen_ts=None, observed_id=None):
         # if self.children.get(key):
         #    return self.children.get(key)
         self.children[key] = self
@@ -662,11 +662,11 @@ class Badge:
             retcode = 0
 
         except BTLEException as e:
-            self.logger.error("failed pulling data", exc_info=True)
+            self.logger.error("failed pulling data: %r" % e, exc_info=True)
         except TimeoutError as te:
-            self.logger.error("TimeoutError: " + te.message)
+            self.logger.error("TimeoutError: %r" % te, exc_info=True)
         except Exception as e:
-            self.logger.error("unexpected failure", exc_info=True)
+            self.logger.error("unexpected failure: %r" % e, exc_info=True)
         finally:
             try:
                 self.disconnect()
